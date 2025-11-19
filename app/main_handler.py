@@ -12,6 +12,8 @@ router = Router()
 
 @router.message(Command("last_commit"))
 async def last_commits(message: Message):
+    if not message.from_user.id in load_settings().admin_user_id:
+        return
     if len(message.text.split()) < 2:
         return await message.answer("❌ Ты не указал репозиторий")
     repo = message.text.split("/last_commit ")[1]
@@ -36,6 +38,8 @@ async def last_commits(message: Message):
 
 @router.message(Command("last_commits"))
 async def last_commits(message: Message):
+    if not message.from_user.id in load_settings().admin_user_id:
+        return
     repos = load_settings().github_repos
 
     for repo in repos:
