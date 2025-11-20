@@ -108,4 +108,4 @@ async def check_commits(db: Database):
                         await send_long_message(admin_id, text)
             except Exception as e:
                 print(f"Ошибка при проверке коммитов {repo}: {e}")
-        await asyncio.sleep(600)
+        await asyncio.sleep(120)
