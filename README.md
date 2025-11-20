@@ -29,10 +29,9 @@ cp .env.example .env
 3. Отредактируйте `.env` файл, указав ваши токены и настройки:
 
 * `BOT_TOKEN` — токен Telegram бота
-* `GITHUB_ACCESS_TOKEN` — токен GitHub (для приватных репо)
+* `GITHUB_ACCESS_TOKEN` — токен GitHub
 * `DB_PATH` — путь к SQLite базе данных
 * `ADMIN_USER_ID` — ID админов, которые будут получать уведомления
-* `GITHUB_REPOS` — опционально, список репозиториев через запятую для автоотслеживания
 
 4. Запуск через Docker:
 
@@ -49,17 +48,14 @@ githubbot/
 ├── app/
 │   ├── main.py                     # Запуск бота
 │   ├── db.py                       # Работа с базой данных
-│   ├── handlers/                   # Обработчики команд
-│   │   ├── main_handler.py         # Основные команды /last_commit, /last_commits
-│   │   ├── admin_handler.py        # Админ-команды /add_repo, /remove_repo
-│   │   └── ...
+│   ├── main_handler.py             # Обработчик
 │   ├── config.py                   # Настройки и токены
-│   ├── github.py                   # Работа с GitHub API
-│   └── utils.py                    # Вспомогательные функции (send_long_message и т.д.)
-├── data/                            # SQLite база данных
-├── docker-compose.yml               # Docker Compose конфигурация
-├── Dockerfile                       # Docker образ
-└── requirements.txt                 # Python зависимости
+│   ├── bot.py                      # Инициализация бота
+│   └── middlewares.py              # Middlewares
+├── data/                           # SQLite база данных
+├── docker-compose.yml              # Docker Compose конфигурация
+├── Dockerfile                      # Docker образ
+└── requirements.txt                # Python зависимости
 ```
 
 ---
