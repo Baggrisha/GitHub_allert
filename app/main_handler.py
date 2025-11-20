@@ -12,31 +12,66 @@ from .scripts import get_commits, send_long_message, format_commit_message
 
 router = Router()
 
+
 @router.message(Command("last_commit"))
-async def last_commits(message: Message):
-    if not message.from_user.id in load_settings().admin_user_id:
+async def last_commit(message: Message):
+    """Показывает последние 5 коммитов для указанного репозитория (URL или owner/repo)."""
+
+    if message.from_user.id not in load_settings().admin_user_id:
         return
-    if len(message.text.split()) < 2:
-        return await message.answer("❌ Ты не указал репозиторий")
-    repo = message.text.split("/last_commit ")[1]
+
+    # Получаем аргумент команды
+    parts = message.text.split(maxsplit=1)
+    if len(parts) < 2:
+        return await message.answer(
+            "❌ Ты не указал репозиторий!\nПример: /last_commit username/repo или https://github.com/username/repo")
+
+    repo_input = parts[1].strip()
+
+    # ----- если пользователь прислал URL -----
+    if re.match(r"^https://github\.com/", repo_input):
+        m = re.match(r"^https://github\.com/([^/]+)/([^/]+)", repo_input)
+        if not m:
+            return await message.answer("❌ Не удалось распарсить URL GitHub.")
+        owner = m.group(1)
+        repo_name = m.group(2)
+        repo = f"{owner}/{repo_name}"
+
+    # ----- если прислал owner/repo -----
+    else:
+        if not re.match(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", repo_input):
+            return await message.answer("❌ Некорректный формат. Используйте <b>owner/repo</b> или URL GitHub counts")
+        repo = repo_input
+
+    if len(message.text.split()) > 2:
+        try:
+            count = int(message.text.split()[-1])
+        except ValueError:
+            await message.answer("Не правильное число коммитов\n\n/last_commit <b>owner/repo</b> или URL GitHub counts")
+            return
+    else:
+        count = load_settings().commit_count
+
     try:
-        commits = await get_commits(repo, 10)
+        commits = await get_commits(repo, count)
     except Exception as e:
-        return await message.answer(f"Ошибка: {html.escape(str(e))}")
+        return await message.answer(f"❌ Ошибка при получении коммитов: {html.escape(str(e))}")
 
     # Заголовок для репозитория
-    header = f"📌 Последние коммиты в <b>{html.escape(repo)}</b>:\n\n"
+    header = f"📌 <b>Последние коммиты</b> в репо: <i>{html.escape(repo)}</i>\n\n"
     text_parts = [header]
 
+    # Формируем текст коммитов
     for c in commits:
-        text_parts.append(format_commit_message(c))
-        text_parts.append("\n")  # разделитель между коммитами
+        commit_text = format_commit_message(c, repo)
+        text_parts.append(f"💬 {commit_text}\n")  # эмодзи перед каждым коммитом
 
-    # Собираем текст
+    # Собираем весь текст
     text = "\n".join(text_parts)
 
-    # Безопасная отправка длинного HTML
+    # Отправка длинного HTML-сообщения
     await send_long_message(message.chat.id, text)
+
 
 @router.message(Command("last_commits"))
 async def last_commits(message: Message, db: Database):
@@ -49,9 +84,10 @@ async def last_commits(message: Message, db: Database):
         return await message.answer("❌ В БД нет ни одного репозитория.")
     if len(message.text.split()) > 1:
         try:
-            count = int(message.text.split()[1])
+            count = int(message.text.split()[-1])
         except ValueError:
-            await message.answer("Не правильное число коммитов\n\n/last_commits <counts>")
+            await message.answer("Не правильное число коммитов\n\n/last_commits counts")
+            return
     else:
         count = load_settings().commit_count
     for repo in repos:
@@ -65,7 +101,7 @@ async def last_commits(message: Message, db: Database):
         parts = [header]
 
         for c in commits:
-            parts.append(format_commit_message(c))
+            parts.append(format_commit_message(c, repo))
             parts.append("\n")
 
         text = "\n".join(parts)
