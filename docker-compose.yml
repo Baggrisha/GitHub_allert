@@ -7,5 +7,7 @@ services:
       - .env
     environment:
       - TZ=Europe/Moscow
+    volumes:
+       - ./data:/app/data
     restart: unless-stopped
     container_name: githubbot
