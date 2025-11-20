@@ -4,6 +4,8 @@ from aiogram import Bot
 from aiogram.types import BotCommand, BotCommandScopeChat
 
 from app.config import load_settings
+from app.db import Database
+from app.middlewares import InjectDependenciesMiddleware
 from app.scripts import check_commits
 from .bot import bot, dp
 from .main_handler import router as main_router
@@ -12,8 +14,11 @@ from .main_handler import router as main_router
 async def setup_bot_commands(bot: Bot) -> None:
     """Настройка команд бота для отображения в меню"""
     commands = [
-        BotCommand(command="last_commit", description="Последние коммиты для конкретного репо"),
-        BotCommand(command="help", description="Последние коммиты для всех указанных репо"),
+        BotCommand(command="last_commit", description="📌 Посмотреть последний коммит конкретного репозитория"),
+        BotCommand(command="last_commits", description="🔥 Последние коммиты всех твоих репозиториев"),
+        BotCommand(command="add_repo", description="➕ Добавить новый репозиторий в список"),
+        BotCommand(command="remove_repo", description="🗑 Удалить репозиторий из списка"),
+        BotCommand(command="my_repos", description="📝 Список всех твоих репозиториев"),
     ]
     for admin in load_settings().admin_user_id:
         try:
@@ -27,7 +32,12 @@ async def setup_bot_commands(bot: Bot) -> None:
 
 # Основная функция
 async def main():
-    asyncio.create_task(check_commits())
+    db = Database(load_settings().db_path)
+    asyncio.create_task(check_commits(db))
+    await db.init()
+
+    dp.message.middleware(InjectDependenciesMiddleware(load_settings(), db))
+
     dp.include_router(main_router)
     await setup_bot_commands(bot)
     try:

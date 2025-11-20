@@ -6,4 +6,9 @@ WORKDIR /app
 COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
+COPY . /app
+
+# Директории для БД и бэкапов
+RUN mkdir -p /app/data /app/backups
+
 CMD ["python", "-m", "app.main"]

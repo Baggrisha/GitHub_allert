@@ -1,14 +1,15 @@
 import asyncio
 import datetime
+import html
+import ssl
 from zoneinfo import ZoneInfo
 
 import aiohttp
 import certifi
-import ssl
-import html
 
 from .bot import bot
 from .config import load_settings
+from .db import Database
 
 # SSL контекст для GitHub
 ssl_context = ssl.create_default_context(cafile=certifi.where())
@@ -62,7 +63,7 @@ async def get_commits(repo: str, count: int = 1):
             return data[:count]
 
 
-def format_commit_message(commit: dict) -> str:
+def format_commit_message(commit: dict, repo: str) -> str:
     """Форматирует коммит в HTML с безопасным экранированием"""
     author = html.escape(commit["commit"]["committer"]["name"])
     message = commit["commit"]["message"]
@@ -77,9 +78,9 @@ def format_commit_message(commit: dict) -> str:
     # Разбиваем текст коммита на заголовок и тело
     if "\n\n" in message:
         title, body = message.split("\n\n", 1)
-        main_text = f"✅ Обновление загружено:\n<b>{html.escape(title)}</b>\n\n📝 Комментарий:\n<pre>{html.escape(body)}</pre>"
+        main_text = f"📌 Последние коммит в {repo}\n\n✅ Обновление загружено:\n<b>{html.escape(title)}</b>\n\n📝 Комментарий:\n<pre>{html.escape(body)}</pre>"
     else:
-        main_text = f"✅ Обновление загружено:\n<b>{html.escape(message)}</b>"
+        main_text = f"📌 Последние коммит в {repo}\n\n✅ Обновление загружено:\n<b>{html.escape(message)}</b>"
 
     footer = (
         f"👤 Автор: <b>{author}</b>\n"
@@ -91,21 +92,20 @@ def format_commit_message(commit: dict) -> str:
     return f"{main_text}\n\n{footer}"
 
 
-async def check_commits():
+async def check_commits(db: Database):
     """Фоновая проверка новых коммитов каждые 60 секунд"""
     last_seen = {}
     while True:
-        for repo in load_settings().github_repos:
+        for repo in await db.get_repos():
             try:
                 commits = await get_commits(repo)
                 commit = commits[0]
                 sha = commit["sha"]
                 if last_seen.get(repo) != sha:
                     last_seen[repo] = sha
-                    text = format_commit_message(commit)
+                    text = format_commit_message(commit, repo)
                     for admin_id in load_settings().admin_user_id:
                         await send_long_message(admin_id, text)
             except Exception as e:
                 print(f"Ошибка при проверке коммитов {repo}: {e}")
-        await asyncio.sleep(60)
-
+        await asyncio.sleep(600)
