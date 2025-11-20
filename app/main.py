@@ -33,8 +33,8 @@ async def setup_bot_commands(bot: Bot) -> None:
 # Основная функция
 async def main():
     db = Database(load_settings().db_path)
-    asyncio.create_task(check_commits(db))
     await db.init()
+    asyncio.create_task(check_commits(db))
 
     dp.message.middleware(InjectDependenciesMiddleware(load_settings(), db))
 

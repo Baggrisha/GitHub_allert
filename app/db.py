@@ -11,7 +11,7 @@ def INIT_SQL():
     PRAGMA journal_mode=WAL;
 
     CREATE TABLE IF NOT EXISTS repos (
-        repo TEXT PRIMARY KEY,
+        repo TEXT PRIMARY KEY
     );
     """
     return INIT_SQL
@@ -32,7 +32,9 @@ class Database:
         async with aiosqlite.connect(self._db_path) as db:
 
             # Миграции
-            migrations = [
+            migrations = [("""
+        CREATE TABLE IF NOT EXISTS repos (
+        repo TEXT PRIMARY KEY);""", "create_db")
             ]
 
             for migration_sql, column_name in migrations:
