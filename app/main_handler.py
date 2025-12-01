@@ -107,8 +107,11 @@ async def cmd_add_repo(message: Message, db: Database):
     if message.from_user.id not in load_settings().admin_user_id:
         return
 
-    parts = message.text.split(maxsplit=1)
-    repo_input = parts[1].strip()
+    try:
+        parts = message.text.split(maxsplit=1)
+        repo_input = parts[1].strip()
+    except IndexError:
+        return await message.answer("❌ Не указан репозиторий")
 
     if re.match(r"^https://github\.com/", repo_input):
         m = re.match(r"^https://github\.com/([^/]+)/([^/]+)", repo_input)

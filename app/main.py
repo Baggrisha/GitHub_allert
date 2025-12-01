@@ -1,5 +1,4 @@
 import asyncio
-from asyncio import create_task
 
 from aiogram import Bot
 from aiogram.types import BotCommand, BotCommandScopeChat
@@ -35,7 +34,7 @@ async def setup_bot_commands(bot: Bot) -> None:
 async def main():
     db = Database(load_settings().db_path)
     await db.init()
-    await create_task(check_commits(db))
+    asyncio.create_task(check_commits(db))
 
     dp.message.middleware(InjectDependenciesMiddleware(load_settings(), db))
 
