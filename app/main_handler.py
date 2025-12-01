@@ -20,7 +20,6 @@ async def last_commit(message: Message):
     if message.from_user.id not in load_settings().admin_user_id:
         return
 
-    # Получаем аргумент команды
     parts = message.text.split(maxsplit=1)
     if len(parts) < 2:
         return await message.answer(
@@ -28,7 +27,6 @@ async def last_commit(message: Message):
 
     repo_input = parts[1].strip()
 
-    # ----- если пользователь прислал URL -----
     if re.match(r"^https://github\.com/", repo_input):
         m = re.match(r"^https://github\.com/([^/]+)/([^/]+)", repo_input)
         if not m:
@@ -37,7 +35,6 @@ async def last_commit(message: Message):
         repo_name = m.group(2)
         repo = f"{owner}/{repo_name}"
 
-    # ----- если прислал owner/repo -----
     else:
         if not re.match(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", repo_input):
             return await message.answer("❌ Некорректный формат. Используйте <b>owner/repo</b> или URL GitHub counts")
@@ -57,19 +54,15 @@ async def last_commit(message: Message):
     except Exception as e:
         return await message.answer(f"❌ Ошибка при получении коммитов: {html.escape(str(e))}")
 
-    # Заголовок для репозитория
     header = f"📌 <b>Последние коммиты</b> в репо: <i>{html.escape(repo)}</i>\n\n"
     text_parts = [header]
 
-    # Формируем текст коммитов
     for c in commits:
         commit_text = format_commit_message(c, repo)
-        text_parts.append(f"💬 {commit_text}\n")  # эмодзи перед каждым коммитом
+        text_parts.append(f"💬 {commit_text}\n")
 
-    # Собираем весь текст
     text = "\n".join(text_parts)
 
-    # Отправка длинного HTML-сообщения
     await send_long_message(message.chat.id, text)
 
 
@@ -117,10 +110,7 @@ async def cmd_add_repo(message: Message, db: Database):
     parts = message.text.split(maxsplit=1)
     repo_input = parts[1].strip()
 
-    # ----- если пользователь прислал URL -----
     if re.match(r"^https://github\.com/", repo_input):
-        # Пример URL:
-        # https://github.com/owner/repo
         m = re.match(r"^https://github\.com/([^/]+)/([^/]+)", repo_input)
         if not m:
             return await message.answer("❌ Не удалось распарсить URL GitHub.")
@@ -129,7 +119,6 @@ async def cmd_add_repo(message: Message, db: Database):
         repo_name = m.group(2)
         repo = f"{owner}/{repo_name}"
 
-    # ----- если прислал owner/repo -----
     else:
         if not re.match(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", repo_input):
             return await message.answer("❌ Некорректный формат. Используйте <b>owner/repo</b> или URL GitHub.")
@@ -152,7 +141,6 @@ async def cmd_remove_repo(message: Message, db: Database):
 
     repo_input = parts[1].strip()
 
-    # ---- Если передан URL ----
     if re.match(r"^https://github\.com/", repo_input):
         m = re.match(r"^https://github\.com/([^/]+)/([^/]+)", repo_input)
         if not m:
@@ -162,7 +150,6 @@ async def cmd_remove_repo(message: Message, db: Database):
         repo_name = m.group(2)
         repo = f"{owner}/{repo_name}"
 
-    # ---- Если передано owner/repo ----
     else:
         if not re.match(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$", repo_input):
             return await message.answer(
@@ -170,7 +157,6 @@ async def cmd_remove_repo(message: Message, db: Database):
             )
         repo = repo_input
 
-    # ---- Удаление из БД ----
     exist = await db.get_repos()
     if repo in exist:
         await db.remove_repo(repo)
@@ -181,7 +167,7 @@ async def cmd_remove_repo(message: Message, db: Database):
     await message.answer(msg)
 
 
-@router.message(Command("list_repos"))
+@router.message(Command("my_repos"))
 async def cmd_list_repos(message: Message, db: Database):
     if message.from_user.id not in load_settings().admin_user_id:
         return
