@@ -94,15 +94,15 @@ def format_commit_message(commit: dict, repo: str) -> str:
 
 async def check_commits(db: Database):
     """Фоновая проверка новых коммитов каждые 60 секунд"""
-    last_seen = {}
     while True:
         for repo in await db.get_repos():
             try:
                 commits = await get_commits(repo)
                 commit = commits[0]
                 sha = commit["sha"]
-                if last_seen.get(repo) != sha:
-                    last_seen[repo] = sha
+                last_commits = await db.get_last_commit(repo)
+                if last_commits != sha:
+                    await db.add_last_commit(repo, sha)
                     text = format_commit_message(commit, repo)
                     for admin_id in load_settings().admin_user_id:
                         await send_long_message(admin_id, text)

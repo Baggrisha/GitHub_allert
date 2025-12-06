@@ -18,6 +18,7 @@ async def setup_bot_commands(bot: Bot) -> None:
         BotCommand(command="last_commits", description="🔥 Последние коммиты всех твоих репозиториев"),
         BotCommand(command="add_repo", description="➕ Добавить новый репозиторий в список"),
         BotCommand(command="remove_repo", description="🗑 Удалить репозиторий из списка"),
+        BotCommand(command="remove_all_repo", description="🗑 Удалить все репозитории из списка"),
         BotCommand(command="my_repos", description="📝 Список всех твоих репозиториев"),
     ]
     for admin in load_settings().admin_user_id:
