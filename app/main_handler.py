@@ -170,6 +170,21 @@ async def cmd_remove_repo(message: Message, db: Database):
     await message.answer(msg)
 
 
+@router.message(Command("remove_all_repo"))
+async def cmd_remove_all_repo(message: Message, db: Database):
+    if message.from_user.id not in load_settings().admin_user_id:
+        return
+
+    exist = await db.get_repos()
+    if exist:
+        await db.remove_all_repo()
+        msg = "🗑 Все репозитории удалёны."
+    else:
+        msg = f"⚠️ Репозитории не найдены."
+
+    await message.answer(msg)
+
+
 @router.message(Command("my_repos"))
 async def cmd_list_repos(message: Message, db: Database):
     if message.from_user.id not in load_settings().admin_user_id:

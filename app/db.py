@@ -11,7 +11,8 @@ def INIT_SQL():
     PRAGMA journal_mode=WAL;
 
     CREATE TABLE IF NOT EXISTS repos (
-        repo TEXT PRIMARY KEY
+        repo TEXT PRIMARY KEY,
+        last_commit TEXT
     );
     """
     return INIT_SQL
@@ -32,9 +33,9 @@ class Database:
         async with aiosqlite.connect(self._db_path) as db:
 
             # Миграции
-            migrations = [("""
-        CREATE TABLE IF NOT EXISTS repos (
-        repo TEXT PRIMARY KEY);""", "create_db")
+            migrations = [
+        ("""CREATE TABLE IF NOT EXISTS repos (repo TEXT PRIMARY KEY);""", "create_db"),
+        ("""ALTER TABLE repos ADD COLUMN last_commit TEXT;""", "add_last_commit")
             ]
 
             for migration_sql, column_name in migrations:
@@ -86,6 +87,13 @@ class Database:
             (repo,)
         )
 
+    async def add_last_commit(self, repo:str, last_commit: str):
+        """Добавление последнего коммита."""
+        await self.execute(
+            "UPDATE repos SET last_commit = ? WHERE repo = ?;",
+            (last_commit, repo)
+        )
+
     async def remove_repo(self, repo: str):
         """Удаляет репозиторий из таблицы."""
         await self.execute(
@@ -93,7 +101,18 @@ class Database:
             (repo,)
         )
 
+    async def remove_all_repo(self):
+        """Удаляет все репозиторий из таблицы."""
+        await self.execute(
+            "DELETE * repos;"
+        )
+
     async def get_repos(self):
         """Возвращает список всех репозиториев."""
         rows = await self.fetchall("SELECT repo FROM repos;")
         return [row["repo"] for row in rows]
+
+    async def get_last_commit(self, repo: str):
+        """Возвращает список всех репозиториев."""
+        rows = await self.fetchall("SELECT last_commit FROM repos WHERE repo = ?;", (repo,))
+        return rows[0][0]
